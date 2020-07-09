@@ -8,12 +8,17 @@
 
 import UIKit
 
+public protocol SwipeSelectingCollectionViewDelegate: class {
+	func shouldBeginPanSelectingGesture() -> Bool
+}
+
 public class SwipeSelectingCollectionView: UICollectionView {
 
 	private var beginIndexPath: IndexPath?
 	private var selectingRange: ClosedRange<IndexPath>?
 	private var selectingMode: SelectingMode = .selecting
 	private var selectingIndexPaths = Set<IndexPath>()
+	public weak var panSelectingDelegate: SwipeSelectingCollectionViewDelegate?
 
 	private enum SelectingMode {
 		case selecting, deselecting
@@ -23,6 +28,7 @@ public class SwipeSelectingCollectionView: UICollectionView {
 		let gestureRecognizer = SwipeSelectingGestureRecognizer(
 			target: self,
 			action: #selector(SwipeSelectingCollectionView.didPanSelectingGestureRecognizerChange(gestureRecognizer:)))
+		gestureRecognizer.delegate = self
 		return gestureRecognizer
 	} ()
 
@@ -162,4 +168,15 @@ public class SwipeSelectingCollectionView: UICollectionView {
 		return indexPaths
 	}
 
+}
+
+// MARK: - UIGestureRecognizerDelegate
+extension SwipeSelectingCollectionView: UIGestureRecognizerDelegate {
+
+	public override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+		if gestureRecognizer == panSelectingGestureRecognizer {
+			return panSelectingDelegate?.shouldBeginPanSelectingGesture() ?? super.gestureRecognizerShouldBegin(gestureRecognizer)
+		}
+		return super.gestureRecognizerShouldBegin(gestureRecognizer)
+	}
 }
